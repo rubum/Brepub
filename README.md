@@ -19,7 +19,7 @@ Brepub is a fast, continuous-scrolling EPUB reader. It is built as a **responsiv
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:rubum/Brepub.git
 cd Brepub
 ```
 
