@@ -54,7 +54,8 @@ This does everything above, PLUS it checks for `swiftc`, compiles the native wra
 
 ## Project Structure
 
-*   `index.html` & `main.js`: Main entry points for the web application.
+*   `src/`: Application source code (`main.js`, `settings.js`, `ui.js`, `reader.js`, `style.css`).
+*   `index.html`: Web entry point.
 *   `native-macos/`: Swift source files for the native window wrapper.
-*   `run_brepub.sh`: Automation script for building the native app.
+*   `run_brepub.sh`: Automation script for building and running.
 *   `Brepub.app/`: The output macOS application bundle.
