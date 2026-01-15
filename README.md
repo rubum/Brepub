@@ -1,6 +1,15 @@
+
+https://github.com/user-attachments/assets/9bda4f93-5039-4163-b360-f7d31c80f743
 # Brepub - Modern EPUB Reader (Web & macOS)
 
 Brepub is a fast, continuous-scrolling EPUB reader. It is built as a **responsive web application** (using Vite & epub.js) that can be run in any browser, and includes a **native Swift wrapper** for a seamless, frameless desktop experience on macOS.
+
+## Demo
+
+![Demo Video](Uploading Brepub.mp4…)
+
+
+<!-- Add your video or GIF here -->
 
 ## Features
 
