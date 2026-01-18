@@ -2,11 +2,11 @@
 export class SettingsManager {
     constructor() {
         this.defaults = {
-            theme: 'light',
             fontSize: 18,
             lineHeight: 1.6,
             readerWidth: 80,
-            fontFamily: "'Source Serif 4', Georgia, serif"
+            fontFamily: "'Source Serif 4', Georgia, serif",
+            apiKey: ''
         }
         this.settings = this.load()
         this.listeners = []

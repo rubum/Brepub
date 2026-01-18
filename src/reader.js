@@ -34,6 +34,20 @@ export class EpubReader {
                 height: '100%'
             })
 
+            this.rendition.on('selected', (cfiRange, contents) => {
+                const range = contents.range(cfiRange)
+                const text = range.toString().trim()
+
+                if (text) {
+                    const rect = range.getBoundingClientRect()
+                    const iframe = contents.document.defaultView.frameElement
+                    const iframeRect = iframe.getBoundingClientRect()
+                    const x = rect.left + iframeRect.left + (rect.width / 2) - 75
+                    const y = rect.top + iframeRect.top - 50
+                    this.ui.showSelectionMenu(x, y, text)
+                }
+            })
+
             await this.rendition.display()
 
             // Setup navigation
@@ -57,7 +71,7 @@ export class EpubReader {
                 font-family: ${settings.fontFamily} !important;
                 font-size: ${settings.fontSize}px !important;
                 line-height: ${settings.lineHeight} !important;
-                color: ${settings.theme === 'dark' ? '#f8fafc' : '#0f172a'} !important;
+                color: #0f172a !important;
                 background: transparent !important;
                 padding: 40px 5% !important;
                 transition: all 0.3s ease !important;
@@ -73,6 +87,11 @@ export class EpubReader {
             contents.document.body.addEventListener('click', () => {
                 document.getElementById('settings-panel').classList.add('hidden')
                 document.getElementById('sidebar').classList.remove('open')
+
+                const sel = contents.window.getSelection()
+                if (!sel || sel.isCollapsed) {
+                    this.ui.hideSelectionMenu()
+                }
             })
         })
 

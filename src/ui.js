@@ -1,4 +1,7 @@
 
+import { GeminiService } from './gemini.js'
+import { marked } from 'marked'
+
 export class UIManager {
     constructor(settingsManager) {
         this.settingsManager = settingsManager
@@ -11,6 +14,18 @@ export class UIManager {
         this.emptyState = document.getElementById('empty-state')
         this.tocList = document.getElementById('toc')
 
+        // Selection Menu & Modal elements
+        this.selectionMenu = document.getElementById('selection-menu')
+        this.explanationModal = document.getElementById('explanation-modal')
+        this.btnExplain = document.getElementById('btn-explain')
+        this.btnCloseModal = document.getElementById('close-modal')
+        this.chatMessages = document.getElementById('chat-messages')
+        this.explanationSource = document.getElementById('explanation-source')
+        this.chatInput = document.getElementById('chat-input')
+        this.btnSend = document.getElementById('btn-send')
+
+        this.currentSelectionText = ''
+
         // Controls
         this.fontSizeSlider = document.getElementById('font-size-slider')
         this.fontSizeVal = document.getElementById('font-size-val')
@@ -20,8 +35,17 @@ export class UIManager {
         this.readerWidthVal = document.getElementById('reader-width-val')
         this.fontBtns = document.querySelectorAll('.font-btn')
 
+        this.geminiService = new GeminiService()
+        // Initialize with saved key if available
+        const settings = this.settingsManager.get()
+        if (settings.apiKey) {
+            this.geminiService.configure(settings.apiKey)
+        }
+
         this.setupListeners()
-        this.updateUI(this.settingsManager.get())
+        this.setupSelectionListeners()
+        this.setupChatListeners()
+        this.updateUI(settings)
     }
 
     setupListeners() {
@@ -36,10 +60,7 @@ export class UIManager {
             this.toggleSettings()
         })
 
-        document.getElementById('toggle-theme').addEventListener('click', () => {
-            const current = this.settingsManager.get().theme
-            this.settingsManager.set('theme', current === 'light' ? 'dark' : 'light')
-        })
+
 
         const closeSidebarBtn = document.getElementById('close-sidebar')
         if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => this.sidebar.classList.remove('open'))
@@ -59,6 +80,19 @@ export class UIManager {
 
         this.settingsPanel.addEventListener('click', (e) => e.stopPropagation())
         this.sidebar.addEventListener('click', (e) => e.stopPropagation())
+
+        this.settingsPanel.addEventListener('click', (e) => e.stopPropagation())
+        this.sidebar.addEventListener('click', (e) => e.stopPropagation())
+
+        // API Key Listener
+        const apiKeyInput = document.getElementById('api-key-input')
+        if (apiKeyInput) {
+            apiKeyInput.addEventListener('change', (e) => {
+                const key = e.target.value.trim()
+                this.settingsManager.set('apiKey', key)
+                this.geminiService.configure(key)
+            })
+        }
 
         // Input Listeners
         this.fontSizeSlider.addEventListener('input', (e) => {
@@ -89,7 +123,7 @@ export class UIManager {
     }
 
     updateUI(settings) {
-        document.documentElement.setAttribute('data-theme', settings.theme)
+
 
         this.fontSizeSlider.value = settings.fontSize
         this.fontSizeVal.textContent = `${settings.fontSize}px`
@@ -104,6 +138,11 @@ export class UIManager {
         this.fontBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.fontFamily === settings.fontFamily)
         })
+
+        const apiKeyInput = document.getElementById('api-key-input')
+        if (apiKeyInput) {
+            apiKeyInput.value = settings.apiKey || ''
+        }
     }
 
     toggleSidebar() {
@@ -152,5 +191,126 @@ export class UIManager {
             li.appendChild(a)
             this.tocList.appendChild(li)
         })
+    }
+
+    setupSelectionListeners() {
+        // Modal close
+        this.btnCloseModal.addEventListener('click', () => {
+            this.explanationModal.classList.add('hidden')
+        })
+
+        // Close modal on outside click
+        this.explanationModal.addEventListener('click', (e) => {
+            if (e.target === this.explanationModal) {
+                this.explanationModal.classList.add('hidden')
+            }
+        })
+
+        // Explain button
+        this.btnExplain.addEventListener('click', () => {
+            const textToExplain = this.currentSelectionText
+            this.hideSelectionMenu()
+            this.showExplanationModal(textToExplain)
+        })
+
+        // Hide selection menu on scroll/resize (optional, handled mainly by reader interactions)
+        window.addEventListener('scroll', () => this.hideSelectionMenu())
+        window.addEventListener('resize', () => this.hideSelectionMenu())
+    }
+
+    showSelectionMenu(x, y, text) {
+        this.currentSelectionText = text
+        this.selectionMenu.style.left = `${x}px`
+        this.selectionMenu.style.top = `${y}px`
+        this.selectionMenu.classList.remove('hidden')
+    }
+
+    hideSelectionMenu() {
+        this.selectionMenu.classList.add('hidden')
+        this.currentSelectionText = ''
+    }
+
+    setupChatListeners() {
+        const sendMessage = async () => {
+            const message = this.chatInput.value.trim()
+            if (!message) return
+
+            // User Message
+            this.appendMessage(message, 'user')
+            this.chatInput.value = ''
+
+            // AI Loading
+            const loadingId = this.appendLoadingMessage()
+
+            try {
+                const response = await this.geminiService.sendMessage(message)
+                this.removeMessage(loadingId)
+                this.appendMessage(response, 'ai')
+            } catch (error) {
+                this.removeMessage(loadingId)
+                this.appendMessage(`Error: ${error.message}`, 'ai')
+            }
+        }
+
+        this.btnSend.addEventListener('click', sendMessage)
+        this.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage()
+        })
+    }
+
+    appendMessage(text, sender) {
+        const bubble = document.createElement('div')
+        bubble.classList.add('message-bubble', `message-${sender}`)
+
+        if (sender === 'ai') {
+            bubble.innerHTML = marked.parse(text)
+        } else {
+            bubble.textContent = text
+        }
+
+        this.chatMessages.appendChild(bubble)
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight
+        return bubble
+    }
+
+    appendLoadingMessage() {
+        const id = 'loading-' + Date.now()
+        const bubble = document.createElement('div')
+        bubble.id = id
+        bubble.classList.add('message-bubble', 'message-ai')
+        bubble.innerHTML = '<div class="loader-inline"></div> Thinking...'
+        this.chatMessages.appendChild(bubble)
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight
+        return id
+    }
+
+    removeMessage(id) {
+        const el = document.getElementById(id)
+        if (el) el.remove()
+    }
+
+    async showExplanationModal(text) {
+        this.explanationModal.classList.remove('hidden')
+
+        // Show source text
+        this.explanationSource.textContent = text
+        this.explanationSource.classList.remove('hidden')
+
+        // Clear previous chat
+        this.chatMessages.innerHTML = ''
+
+        // Initial Message interactions
+        this.appendMessage("Explain this text", 'user')
+        const loadingId = this.appendLoadingMessage()
+
+        try {
+            // Start new chat session
+            const explanation = await this.geminiService.startChat(text)
+            this.removeMessage(loadingId)
+            this.appendMessage(explanation, 'ai')
+        } catch (error) {
+            this.removeMessage(loadingId)
+            this.appendMessage(`Error: ${error.message}`, 'ai')
+        }
     }
 }

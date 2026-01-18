@@ -24,18 +24,7 @@
         </label>
         <button id="toggle-sidebar" class="btn btn-secondary">Chapters</button>
         <button id="toggle-settings" class="btn btn-secondary">Settings</button>
-        <button id="toggle-theme" class="btn btn-secondary" aria-label="Toggle Theme">
-          <svg class="sun" viewBox="0 0 24 24" width="18" height="18">
-            <path
-              d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-12.37a.996.996 0 00-1.41-1.41l-1.06 1.06a.996.996 0 101.41 1.41l1.06-1.06zm-12.37 12.37a.996.996 0 00-1.41-1.41l-1.06 1.06a.996.996 0 101.41 1.41l1.06-1.06z"
-              fill="currentColor" />
-          </svg>
-          <svg class="moon" viewBox="0 0 24 24" width="18" height="18">
-            <path
-              d="M9.37 5.51c-.18 0-.36.01-.55.03 4.28 1.14 7.43 5.04 7.43 9.68 0 2.21-.73 4.23-1.95 5.88 5.25-1.16 9.17-5.83 9.17-11.41 0-6.47-5.25-11.71-11.72-11.71C10.15 1.98 8.44 2.5 7 3.39c1.64 1.25 2.62 3.23 2.62 5.43 0 .34-.04.68-.11 1.01.69-.15 1.41-.24 2.16-.24 4.14 0 7.5 3.36 7.5 7.5s-3.36 7.5-7.5 7.5c-1.31 0-2.54-.34-3.62-.93 2.76-1.18 4.71-3.9 4.71-7.07 0-4.22-3.42-7.64-7.64-7.64-.18 0-.36.01-.55.03z"
-              fill="currentColor" />
-          </svg>
-        </button>
+
       </div>
     </header>
 
@@ -84,12 +73,44 @@
           <label>Reader Width: <span id="reader-width-val">80%</span></label>
           <input type="range" id="reader-width-slider" min="50" max="100" value="80" step="5">
         </div>
+
+        <div class="setting-group">
+          <label>Gemini API Key</label>
+          <input type="password" id="api-key-input" placeholder="Enter your API Key" class="text-input">
+        </div>
       </div>
     </main>
 
     <div id="loading-overlay" class="loading-overlay hidden">
       <div class="loader"></div>
       <p>Loading your book...</p>
+    </div>
+
+    <!-- Selection Menu -->
+    <div id="selection-menu" class="selection-menu hidden">
+      <button id="btn-explain" class="btn-menu">
+        <span class="icon">✨</span> Explain with AI
+      </button>
+    </div>
+
+    <!-- Explanation Modal -->
+    <div id="explanation-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><span class="icon">✨</span> AI Explanation</h3>
+          <button id="close-modal" class="btn-icon">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="explanation-source" class="explanation-source hidden"></div>
+          <div id="chat-messages" class="chat-messages"></div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" id="chat-input" placeholder="Ask a follow-up question..." class="chat-input">
+          <button id="btn-send" class="btn-send">
+            <span class="icon">➤</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
   <script type="module" src="/src/main.js"></script>
