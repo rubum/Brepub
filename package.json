@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@lingo-reader/mobi-parser": "^0.4.5",
     "epubjs": "^0.3.93",
     "jszip": "^3.10.1",
+    "localforage": "^1.10.0",
     "marked": "^17.0.1"
   }
 }
