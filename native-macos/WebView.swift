@@ -48,7 +48,11 @@ struct WebView: NSViewRepresentable {
             openPanel.canChooseFiles = true
             openPanel.canChooseDirectories = false
             openPanel.allowsMultipleSelection = parameters.allowsMultipleSelection
-            openPanel.allowedContentTypes = [.epub] // Narrowing it down to EPUB as per app context
+            let epubType = UTType.epub
+            let azw3Type = UTType(tag: "azw3", tagClass: .filenameExtension, conformingTo: .data) ?? .data
+            let mobiType = UTType(tag: "mobi", tagClass: .filenameExtension, conformingTo: .data) ?? .data
+            
+            openPanel.allowedContentTypes = [epubType, azw3Type, mobiType]
 
             openPanel.begin { response in
                 if response == .OK {

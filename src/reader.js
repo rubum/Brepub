@@ -34,7 +34,43 @@ export class EpubReader {
                 height: '100%'
             })
 
+            this.rendition.on('selected', (cfiRange, contents) => {
+                const range = contents.range(cfiRange)
+                const text = range.toString().trim()
+
+                if (text) {
+                    const rect = range.getBoundingClientRect()
+                    const iframe = contents.document.defaultView.frameElement
+                    const iframeRect = iframe.getBoundingClientRect()
+                    const x = rect.left + iframeRect.left + (rect.width / 2) - 75
+                    const y = rect.top + iframeRect.top - 50
+                    this.ui.showSelectionMenu(x, y, text)
+                }
+            })
+
             await this.rendition.display()
+
+            // Register content hook once per rendition
+            this.rendition.hooks.content.register((contents) => {
+                this.injectStyle(contents.document)
+
+                contents.document.body.addEventListener('mousedown', (e) => {
+                    // Bridge the event to the parent window so ui.js can catch it
+                    const bridgeEvent = new MouseEvent('mousedown', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        clientX: e.clientX,
+                        clientY: e.clientY
+                    })
+                    window.dispatchEvent(bridgeEvent)
+
+                    const sel = contents.window.getSelection()
+                    if (!sel || sel.isCollapsed) {
+                        this.ui.hideSelectionMenu()
+                    }
+                })
+            })
 
             // Setup navigation
             const navigation = await this.book.loaded.navigation
@@ -52,41 +88,49 @@ export class EpubReader {
         if (!this.rendition) return
         const settings = this.settingsManager.get()
 
-        const css = `
-            body {
+        this.currentStyles = `
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap');
+
+            html, body {
+                background: transparent !important;
+            }
+
+            body, p, div, span, li {
                 font-family: ${settings.fontFamily} !important;
                 font-size: ${settings.fontSize}px !important;
                 line-height: ${settings.lineHeight} !important;
-                color: ${settings.theme === 'dark' ? '#f8fafc' : '#0f172a'} !important;
-                background: transparent !important;
-                padding: 40px 5% !important;
-                transition: all 0.3s ease !important;
+                color: #0f172a !important;
+                padding: 0 !important;
+                margin-top: 0.5em !important;
+                margin-bottom: 0.5em !important;
             }
-            a { color: #6366f1 !important; }
+
+            body {
+                padding: 40px 5% !important;
+                max-width: 100% !important;
+            }
+
+            a { color: #4f46e5 !important; }
             img { max-width: 100% !important; height: auto !important; }
+
+            .search-highlight {
+                background-color: rgba(255, 235, 59, 0.4) !important;
+                border-bottom: 2px solid #fbc02d;
+                border-radius: 2px;
+            }
         `
 
-        this.rendition.hooks.content.register((contents) => {
-            this.injectStyle(contents.document, css)
-
-            // Add click listener to close panels when clicking content
-            contents.document.body.addEventListener('click', () => {
-                document.getElementById('settings-panel').classList.add('hidden')
-                document.getElementById('sidebar').classList.remove('open')
-            })
-        })
-
-        // Apply to existing views
+        // Apply updated styles to existing documents
         if (this.rendition.manager) {
             this.rendition.views().forEach(view => {
                 if (view.contents) {
-                    this.injectStyle(view.contents.document, css)
+                    this.injectStyle(view.contents.document)
                 }
             })
         }
     }
 
-    injectStyle(doc, css) {
+    injectStyle(doc) {
         const head = doc.head
         const styleId = 'brepub-custom-styles'
         let style = head.querySelector(`#${styleId}`)
@@ -96,6 +140,47 @@ export class EpubReader {
             style.id = styleId
             head.appendChild(style)
         }
-        style.textContent = css
+        style.textContent = this.currentStyles
+    }
+
+    renderHighlights(results) {
+        if (!this.rendition) return
+        results.forEach(result => {
+            this.rendition.annotations.add('highlight', result.cfi, {}, (e) => {
+                console.log("Highlight clicked", result.cfi)
+            }, 'search-highlight')
+        })
+    }
+
+    clearHighlights() {
+        if (!this.rendition) return
+        this.rendition.annotations.remove(null, 'highlight')
+    }
+
+    async search(query) {
+        if (!this.book || !query) return []
+
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const regex = new RegExp(`\\b${escapedQuery}\\b`, 'i')
+
+        const results = await Promise.all(
+            this.book.spine.spineItems.map(item =>
+                item.load(this.book.load.bind(this.book))
+                    .then(doc => {
+                        // item.find returns results with excerpts
+                        const findResults = item.find(query)
+
+                        // Filter for whole word matches using the regex
+                        // We check the excerpt to see if the match is bounded correctly
+                        const filtered = findResults.filter(res => {
+                            return regex.test(res.excerpt)
+                        })
+
+                        item.unload()
+                        return filtered
+                    })
+            )
+        )
+        return results.flat()
     }
 }

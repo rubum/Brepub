@@ -13,7 +13,17 @@ https://github.com/user-attachments/assets/9bda4f93-5039-4163-b360-f7d31c80f743
 - **Cross-Platform Web Reader**: Runs in any modern browser.
 - **Native macOS App**: optional frameless window wrapper with custom drag support and native traffic light controls.
 - **Continuous Reading**: Vertical scrolling flow for a better reading experience.
+- **AI Explanations**: Select text to get detailed, context-aware AI explanations via Google Gemini.
+- **Interactive Chat**: Engage in a conversation with the AI about the book content.
+- **Rich Typography**: Markdown support for AI responses and customizable reader font settings.
 - **Customizable**: Adjustable font settings, themes (Light/Dark), and layout controls.
+
+## Configuration
+
+To use the AI features, you need a Google Gemini API Key.
+1.  Get a key from [Google AI Studio](https://aistudio.google.com/).
+2.  Open Brepub Settings.
+3.  Paste your key into the "Gemini API Key" field.
 
 ## Prerequisites
 
