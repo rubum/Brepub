@@ -112,6 +112,12 @@ export class EpubReader {
 
             a { color: #4f46e5 !important; }
             img { max-width: 100% !important; height: auto !important; }
+
+            .search-highlight {
+                background-color: rgba(255, 235, 59, 0.4) !important;
+                border-bottom: 2px solid #fbc02d;
+                border-radius: 2px;
+            }
         `
 
         // Apply updated styles to existing documents
@@ -137,16 +143,41 @@ export class EpubReader {
         style.textContent = this.currentStyles
     }
 
+    renderHighlights(results) {
+        if (!this.rendition) return
+        results.forEach(result => {
+            this.rendition.annotations.add('highlight', result.cfi, {}, (e) => {
+                console.log("Highlight clicked", result.cfi)
+            }, 'search-highlight')
+        })
+    }
+
+    clearHighlights() {
+        if (!this.rendition) return
+        this.rendition.annotations.remove(null, 'highlight')
+    }
+
     async search(query) {
         if (!this.book || !query) return []
+
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const regex = new RegExp(`\\b${escapedQuery}\\b`, 'i')
 
         const results = await Promise.all(
             this.book.spine.spineItems.map(item =>
                 item.load(this.book.load.bind(this.book))
                     .then(doc => {
-                        const results = item.find(query)
+                        // item.find returns results with excerpts
+                        const findResults = item.find(query)
+
+                        // Filter for whole word matches using the regex
+                        // We check the excerpt to see if the match is bounded correctly
+                        const filtered = findResults.filter(res => {
+                            return regex.test(res.excerpt)
+                        })
+
                         item.unload()
-                        return results
+                        return filtered
                     })
             )
         )

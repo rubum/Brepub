@@ -157,23 +157,51 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Search Logic
     const searchInput = document.getElementById('search-input')
+    const closeSearch = document.getElementById('close-search')
     let searchTimeout = null
+
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout)
             const query = e.target.value.trim()
             if (query.length < 3) {
                 uiManager.searchResults.innerHTML = '<p class="search-empty">Type at least 3 characters...</p>'
+                reader.clearHighlights()
                 return
             }
 
             searchTimeout = setTimeout(async () => {
                 uiManager.searchResults.innerHTML = '<div class="search-empty">Searching...</div>'
                 const results = await reader.search(query)
+
+                // Clear and render new highlights
+                reader.clearHighlights()
+                reader.renderHighlights(results)
+
                 uiManager.renderSearchResults(results, (cfi) => {
                     reader.rendition.display(cfi)
                 })
             }, 500)
         })
+
+        // Handle native "X" search-clear button in some browsers
+        searchInput.addEventListener('search', (e) => {
+            if (e.target.value === '') {
+                uiManager.searchResults.innerHTML = '<p class="search-empty">Type to start searching...</p>'
+                reader.clearHighlights()
+            }
+        })
+    }
+
+    if (closeSearch) {
+        closeSearch.addEventListener('click', () => {
+            reader.clearHighlights()
+        })
+    }
+
+    uiManager.onToggleSearch = (isOpen) => {
+        if (!isOpen) {
+            reader.clearHighlights()
+        }
     }
 })

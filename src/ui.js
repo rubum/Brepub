@@ -73,7 +73,12 @@ export class UIManager {
 
         this.btnToggleSearch.addEventListener('click', (e) => {
             e.stopPropagation()
+            const wasHidden = this.searchPanel.classList.contains('hidden')
             this.toggleSearch()
+            if (wasHidden && this.searchPanel.classList.contains('hidden')) {
+                // If it was shown and now it's hidden (after toggleSearch calls closeAllPanels)
+                // But toggleSearch handles the logic. Let's make it simpler.
+            }
         })
 
         this.btnCloseSearch.addEventListener('click', () => this.searchPanel.classList.add('hidden'))
@@ -191,10 +196,15 @@ export class UIManager {
     }
 
     closeAllPanels() {
+        const wasSearchOpen = !this.searchPanel.classList.contains('hidden')
         this.settingsPanel.classList.add('hidden')
         this.sidebar.classList.remove('open')
         if (this.searchPanel) this.searchPanel.classList.add('hidden')
         if (this.historySidebar) this.historySidebar.classList.remove('open')
+
+        if (wasSearchOpen && this.onToggleSearch) {
+            this.onToggleSearch(false)
+        }
     }
 
     toggleSidebar() {
@@ -216,6 +226,7 @@ export class UIManager {
             this.searchPanel.classList.remove('hidden')
             this.searchInput.focus()
         }
+        if (this.onToggleSearch) this.onToggleSearch(!this.searchPanel.classList.contains('hidden'))
     }
 
     toggleHistory() {
